@@ -1,0 +1,56 @@
+﻿@model Application.ViewModels.ModosViewModel
+@{
+	ViewData["Title"] = "Modos";
+}
+
+<div class="text-center">
+	<h1 class="display-3">Tipos De Predicción</h1>
+</div>
+
+<div class="row">
+	<div class="col-12 col-md-6 offset-md-3">
+		<div class="card">
+			<div class="card-header bg-dark text-light">
+				<h5 class="text-center">Seleccione el modo</h5>
+			</div>
+
+			<div class="card-body">
+
+				<form asp-controller="Home" asp-action="Modo" method="post">
+
+					@Html.AntiForgeryToken()
+
+					<div class="mb-3">
+						<label asp-for="ModoSeleccionado" class="form-label">
+							Tipo de Predicción:
+						</label>
+
+						<select asp-for="ModoSeleccionado" class="form-select">
+							<option value="SMA">Media Móvil (SMA) Crossover</option>
+							<option value="RL">Regresión Lineal</option>
+							<option value="MOM">Momentum (ROC)</option>
+						</select>
+					</div>
+
+					<div>
+						<a asp-controller="Home"
+						   asp-action="Index"
+						   class="btn btn-outline-secondary">
+							Volver a Home
+						</a>
+
+						<button type="submit"
+								class="btn btn-outline-primary float-end me-2">
+							Guardar
+						</button>
+
+					</div>
+
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+

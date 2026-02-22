@@ -1,0 +1,205 @@
+﻿@model Application.ViewModels.PredictorListViewModel
+@using Application.Enums
+@{
+	ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+	<h1 class="display-4">Predictor</h1>
+</div>
+
+<div class="text-center">
+	<h4 class="display-3">Registro de valor del activo</h4>
+</div>
+
+@if (Model.ModoUsado != null)
+{
+	<div class="alert alert-info text-center mt-3">
+		<strong>Modo actual:</strong> @Model.ModoUsado
+	</div>
+}
+else
+{
+	<div class="alert alert-warning text-center mt-3">
+		No hay ningún modo seleccionado.
+		Ve a <strong>Modos</strong> y selecciona uno.
+	</div>
+}
+
+
+@if (Model.Resultado != null)
+{
+	<div class="container mt-5">
+		<div class="card shadow p-4 border-success">
+
+			<div class="text-center mb-3">
+				<h4 class="text-success">Resultado de la Predicción</h4>
+			</div>
+
+			@if (Model.ModoUsado == PredictionType.SmaCrossover)
+			{
+				var sma = Model.Resultado.DatosTecnicos as Application.Dtos.SmaCrossoverDto;
+				if (sma != null)
+				{
+					<div class="row text-center">
+
+						<div class="col-md-4">
+							<h6>Modo</h6>
+							<p>@Model.Resultado.Modo</p>
+						</div>
+						<div class="col-md-4">
+							<h6>SMA Corta (5)</h6>
+							<p>@sma.SmaCorta.ToString("F2")</p>
+						</div>
+						<div class="col-md-4">
+							<h6>SMA Larga (20)</h6>
+							<p>@sma.SmaLarga.ToString("F2")</p>
+						</div>
+						<div class="col-md-4">
+							<h6>Tendencia</h6>
+							<p>@(sma.SmaCorta > sma.SmaLarga ? "Alcista" : "Bajista")</p>
+						</div>
+					</div>
+				}
+			}
+			else if (Model.ModoUsado == PredictionType.Regression)
+			{
+				var reg = Model.Resultado.DatosTecnicos as Application.Dtos.RegressionDto;
+				if (reg != null)
+				{
+
+					<div class="row text-center">
+
+						<div class="col-md-3">
+							<h6>Modo</h6>
+							<p>@Model.Resultado.Modo</p>
+						</div>
+
+						<div class="col">
+							<h6>Tendencia del activo:</h6>
+							<p class="@(Model.Resultado.Tendencia == "Alcista" ? "text-success" :
+														   Model.Resultado.Tendencia == "Bajista" ? "text-danger" : "text-secondary")">
+				</p>
+				<p>@Model.Resultado.Tendencia</p>
+			</div>
+
+						<div class="col-md-3">
+							<h6>Predicción (día siguiente)</h6>
+							<p>@reg.Prediccion.ToString("F2")</p>
+						</div>
+					</div>
+				}
+			}
+			else if (Model.ModoUsado == PredictionType.Momentum)
+			{
+				var roc = Model.Resultado.DatosTecnicos as Application.Dtos.RocResultDto;
+				if (roc != null)
+				{
+					<div class="mt-3">
+
+						<div class="col-md-4">
+							<h6>Modo</h6>
+							<p>@Model.Resultado.Modo</p>
+						</div>
+
+						<h6 class="mb-3">Listado ROC(@roc.Periodo)</h6>
+
+						<div class="table-responsive">
+							<table class="table table-sm table-striped">
+								<thead class="table-light">
+									<tr>
+										<th>t</th>
+										<th>Fecha</th>
+										<th>Precio</th>
+										<th>ROC(@roc.Periodo)</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach (var p in roc.Puntos)
+									{
+										<tr>
+											<td>@p.T</td>
+											<td>@p.Fecha.ToString("yyyy-MM-dd")</td>
+											<td>@p.Precio.ToString("F2")</td>
+											<td>
+												@(p.RocPorciento.HasValue? p.RocPorciento.Value.ToString("F2") + "%" : "n/a")
+											</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				}
+			}
+
+		</div>
+	</div>
+}
+
+
+<div class="container mt-5">
+	<div class="card shadow p-4">
+		<form asp-controller="Home" asp-action="Calcular" method="post">
+
+			@Html.AntiForgeryToken()
+			<div asp-validation-summary="All" class="text-danger"></div>
+			<input type="hidden" asp-for="ModoUsado" />
+
+			<p class="text-muted mb-4">
+				Organizado desde el más reciente al más antiguo
+			</p>
+
+			@for (int i = 0; i < Model.Datos.Count; i++)
+			{
+				<div class="row">
+					<div class="col-md-6 mb-3">
+						<label class="form-label">Fecha @(i + 1)</label>
+						<input asp-for="Datos[i].Fecha" type="date" class="form-control" />
+						<span asp-validation-for="Datos[i].Fecha" class="text-danger"></span>
+					</div>
+
+					<div class="col-md-6 mb-3">
+						<label class="form-label">Valor @(i + 1)</label>
+						<input asp-for="Datos[i].Valor" type="number" step="any" class="form-control" placeholder="Ej: 150.50" />
+						<span asp-validation-for="Datos[i].Valor" class="text-danger"></span>
+					</div>
+				</div>
+			}
+
+			<div class="text-center mt-4">
+				<button type="button" class="btn btn-secondary btn-lg me-2" onclick="cargarDatosDemo()">
+					Cargar datos de prueba
+				</button>
+
+				<button type="submit" class="btn btn-primary btn-lg">
+					Calcular predicción
+				</button>
+			</div>
+		</form>
+	</div>
+</div>
+@* esto es para ahorrar tiempo poniendo datos, y para hacer pruebas rapidas *@
+<script>
+	function cargarDatosDemo() {
+		const fechas = document.querySelectorAll('input[type="date"]');
+		const valores = document.querySelectorAll('input[type="number"]');
+		let hoy = new Date();
+
+		fechas.forEach((input, index) => {
+			let fecha = new Date(hoy);
+			fecha.setDate(hoy.getDate() - index);
+			input.value = fecha.toISOString().split('T')[0];
+		});
+
+		valores.forEach((input, index) => {
+			input.value = (100 + index * 2.5).toFixed(2);
+		});
+
+		alert("Datos de prueba cargados correctamente.");
+	}
+</script>
+
+
+
+
